@@ -1,0 +1,64 @@
+Team BlackBox
+EVA2021
+https://arxiv.org/abs/2201.06153
+
+Contacts:
+tivek@ifs.hr
+domagoj.vlah@fer.hr
+
+
+Requires a Linux-like OS with CUDA, Bash, Miniconda (https://docs.conda.io/en/latest/miniconda.html).
+Miniconda will download and install Python, R, and all the required libraries in an isolated environment.
+
+Tested on and configured for a single machine with:
+- 6x Nvidia Quadro RTX 5000 GPUs with 16 GB RAM each,
+- 256 GB RAM
+
+A machine with lower specs might work but we did not test for it.
+To use fewer or more GPUs, modify batch_train_ensemble.sh. There is no guarantee, that using more or especially less than 6 GPUs, would not significantly influence the prediction result in the end. We did not test for it.
+
+
+On our setup, batch_train_ensemble.sh, using prescribed parameters takes ~29 h.
+batch_make_ensemble_prediction.py takes ~1 h per a single ensemble prediction.
+
+
+Required data files (not present in repository):
+data_train.RData - original masked competition data
+data_full.RData - unmasked full data required for score computation
+
+We assume that there exist subdirectories called models, outputs and predictions.
+
+
+Steps to reproduce our results ($ denotes terminal prompt):
+
+0) set up conda environment
+
+$ conda create --name EVA2021_BlackBox --file BlackBox_conda_requirements.txt
+$ conda activate EVA2021_BlackBox
+$ pip install fastai==2.2.5
+$ pip install torch==1.8.1 # ignore the error about torch being too new
+
+
+1) prepare input data
+
+$ Rscript create_tensor.R
+$ python preprocess_data.py
+
+
+2) train model ensemble
+
+$ bash batch_train_ensemble.sh 1 0 252
+
+
+3) prepare full data for score computation
+
+$ Rscript create_tensor_full.R
+$ python preprocess_data_full.py
+
+
+4) make single prediction (and generate observation.RData from full data, needed for score computation)
+
+$ python batch_make_ensemble_predictions.sh 1 1 1 cuda 1 100  # retrain specific models if indicated by output message and rerun
+
+
+5) compute prediction score using functions supplied in compute_scores.py
